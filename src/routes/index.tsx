@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { ResultsRevealSection, type RevealCase } from "@/components/ResultsRevealSection";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Star,
   ArrowUpRight,
@@ -303,11 +304,17 @@ function AnnouncementBar() {
 function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 24);
     h();
     window.addEventListener("scroll", h, { passive: true });
     return () => window.removeEventListener("scroll", h);
+  }, []);
+
+  useEffect(() => {
+    setMounted(true);
   }, []);
 
   useEffect(() => {
@@ -324,6 +331,103 @@ function Nav() {
     ["Journal", "#instagram"],
     ["Visit", "#footer"],
   ];
+
+  const closeMenu = () => setOpen(false);
+
+  const mobileMenu =
+    mounted &&
+    createPortal(
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            key="mobile-nav"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Site navigation"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[300] lg:hidden"
+          >
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute inset-0 flex flex-col bg-cream touch-none"
+              style={{
+                paddingTop: "env(safe-area-inset-top)",
+                paddingBottom: "env(safe-area-inset-bottom)",
+              }}
+            >
+              <div className="flex items-center justify-between border-b border-border/60 px-5 py-4">
+                <a href="#" onClick={closeMenu} className="flex flex-col">
+                  <span className="display text-[1.45rem] leading-none text-ink">Glow</span>
+                  <span className="label-caps !text-[0.58rem] !tracking-[0.22em] text-clay">
+                    by Grace
+                  </span>
+                </a>
+                <button
+                  type="button"
+                  onClick={closeMenu}
+                  aria-label="Close menu"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-cream text-ink transition-colors hover:border-ink/30"
+                >
+                  <X className="h-4 w-4" strokeWidth={1.5} />
+                </button>
+              </div>
+
+              <nav className="flex-1 overflow-y-auto px-5 py-8" aria-label="Mobile">
+                <ul className="divide-y divide-border/50">
+                  {links.map(([label, href], i) => (
+                    <motion.li
+                      key={label}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.08 + i * 0.05, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <a
+                        href={href}
+                        onClick={closeMenu}
+                        className="group flex items-center justify-between py-5"
+                      >
+                        <span className="display text-[clamp(1.75rem,7vw,2.35rem)] leading-none text-ink transition-colors group-active:text-clay">
+                          {label}
+                        </span>
+                        <span className="label-caps !text-[0.55rem] text-muted-foreground">
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                      </a>
+                    </motion.li>
+                  ))}
+                </ul>
+              </nav>
+
+              <div className="space-y-3 border-t border-border/60 px-5 py-5">
+                <a
+                  href={WHATSAPP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={closeMenu}
+                  className="btn-ghost w-full justify-center"
+                >
+                  <WhatsApp className="h-4 w-4" />
+                  WhatsApp
+                </a>
+                <BookButton className="w-full justify-center" onClick={closeMenu}>
+                  Book consultation
+                </BookButton>
+                <p className="text-center text-[0.7rem] text-muted-foreground">
+                  Sonning Common · RG9 5HH
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>,
+      document.body,
+    );
 
   return (
     <header
@@ -369,60 +473,18 @@ function Nav() {
             Book
           </BookButton>
           <button
-            className="rounded-full border border-border p-2.5 lg:hidden"
+            type="button"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-cream text-ink transition-colors hover:border-ink/30 lg:hidden"
             onClick={() => setOpen(true)}
             aria-label="Open menu"
+            aria-expanded={open}
           >
             <Menu className="h-4 w-4" strokeWidth={1.5} />
           </button>
         </div>
       </div>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-cream"
-          >
-            <div className="flex items-center justify-between px-6 py-5">
-              <span className="display text-2xl">Glow <span className="display-italic text-clay">by Grace</span></span>
-              <button onClick={() => setOpen(false)} aria-label="Close">
-                <X className="h-5 w-5" strokeWidth={1.5} />
-              </button>
-            </div>
-            <nav className="mt-10 flex flex-col gap-6 px-8">
-              {links.map(([l, h], i) => (
-                <a
-                  key={l}
-                  href={h}
-                  onClick={() => setOpen(false)}
-                  className="display text-[clamp(2.5rem,12vw,4.5rem)] leading-none text-ink"
-                  style={{ transitionDelay: `${i * 40}ms` }}
-                >
-                  {l}
-                </a>
-              ))}
-            </nav>
-            <div className="mt-14 flex flex-col gap-3 px-8">
-              <a
-                href={WHATSAPP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setOpen(false)}
-                className="btn-ghost justify-center"
-              >
-                <WhatsApp className="h-4 w-4" />
-                WhatsApp
-              </a>
-              <BookButton className="justify-center" onClick={() => setOpen(false)}>
-                Book consultation
-              </BookButton>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {mobileMenu}
     </header>
   );
 }
