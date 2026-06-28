@@ -5,6 +5,8 @@ import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
 import tsConfigPaths from "vite-tsconfig-paths";
 
+const isVercel = Boolean(process.env.VERCEL);
+
 export default defineConfig(({ command }) => ({
   plugins: [
     tsConfigPaths(),
@@ -15,10 +17,14 @@ export default defineConfig(({ command }) => ({
     viteReact(),
     ...(command === "build"
       ? [
-          nitro({
-            preset: "cloudflare-module",
-            cloudflare: { nodeCompat: true, deployConfig: true },
-          }),
+          nitro(
+            isVercel
+              ? { preset: "vercel" }
+              : {
+                  preset: "cloudflare-module",
+                  cloudflare: { nodeCompat: true, deployConfig: true },
+                },
+          ),
         ]
       : []),
   ],
